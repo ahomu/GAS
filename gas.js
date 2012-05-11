@@ -5,23 +5,8 @@
  *
  * Licensed under the MIT license:
  *  http://www.opensource.org/licenses/mit-license.php
- */
-
-/*
-
-# Opt-Out bookmarklet code
-
-javascript:(function(doc){var d=new Date();d.setDate(180);if(doc.cookie.indexOf('__gas=ioo') === -1) doc.cookie = '__gas=ioo;path=/;expires='+d.toUTCString();})(document);
-
-# Opt-In bookmarklet code
-
-javascript:(function(doc){var d=new Date(-1);if(doc.cookie.indexOf('__gas=ioo') !== -1)doc.cookie = '__gas=ioo;path=/;expires='+d.toUTCString();})(document);
-
-*/
-
-/**
+ *
  * @version 0.1
- * @see https://developers.google.com/analytics/devguides/collection/gajs/?hl=ja
  */
 (function(win, doc, loc) {
 

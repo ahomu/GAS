@@ -1,0 +1,1 @@
+javascript:(function(doc){var d=new Date();d.setDate(180);if(doc.cookie.indexOf('__gas=ioo') === -1) doc.cookie = '__gas=ioo;path=/;expires='+d.toUTCString();})(document);
