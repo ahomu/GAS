@@ -134,9 +134,6 @@ javascript:(function(doc){var d=new Date(-1);if(doc.cookie.indexOf('__gas=ioo') 
         // set account
         QUEUE[STRING_push](['_setAccount', profile]);
 
-
-        QUEUE[STRING_push](['_setAllowAnchor', true]);
-
         // prepush
         _gasSetArrayIntoQueue(options.preQueues);
 
