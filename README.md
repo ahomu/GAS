@@ -59,7 +59,8 @@ hmm...
 +  popstate, hashchange時のトラッキングサポート
 +  イベントトラックのsyncサポート（asyncでリクエストが発生しないことがある）
 +  子要素clickへの反応（parentNodeを辿ってdata-xxxを探索する）
-+  ↓のようなdata属性の付与の仕方に対応
+
+↓のようなdata属性の付与の仕方に対応したり
 
     <div id="MusicPlayer" data-event="MusicPlayer">
         <button data-action="start">Start</button>
