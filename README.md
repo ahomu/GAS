@@ -50,7 +50,7 @@ hmm...
     gas.trackPageview('/your_optional_path.html');
 
     // track as an event
-    gas.trackPageview('MusicPlayer', 'start', 'hogehoge');
+    gas.trackEvent('MusicPlayer', 'start', 'hogehoge');
 
 ##???
 
