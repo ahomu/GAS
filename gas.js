@@ -25,7 +25,6 @@
         STRING_prototype     = 'prototype',
         STRING_getAttribute  = 'getAttribute',
         STRING_parentNode    = 'parentNode',
-        STRING_onclick       = 'onclick',
         STRING_indexOf       = 'indexOf',
         STRING_nodeType      = 'nodeType',
         STRING_hostname      = 'hostname',
@@ -198,12 +197,19 @@
      * tracking event priority over
      */
     function gasInitPriorityOver() {
-        var elms = doc[STRING_getElementsByClassName](this.options.classPrior),
-            i = 0, elm, fn;
+        var that = this,
+            elms = doc[STRING_getElementsByClassName](that.options.classPrior),
+            i = 0, elm;
 
-        // set track event closure into onclick attribute
+        // set track event
         while (elm = elms[i++]) {
-            (fn = gasRaiseTrackEvent.call(this, elm, true)) && (elm[STRING_onclick] = fn);
+            if (elm.__gas_prior) {
+                return;
+            }
+            elm.__gas_prior = true;
+            _gasAddEvent(elm, 'click', function(e) {
+                that.raiseTrack(e.target || e.srcElement);
+            });
         }
     }
 
@@ -211,19 +217,15 @@
      * when element has an event tracking info, then return closure or tracking execute.
      *
      * @param {Element} elm
-     * @param {Boolean} getFn
      * @return {Function|Boolean}
      */
-    function gasRaiseTrackEvent(elm, getFn) {
+    function gasRaiseTrackEvent(elm) {
         var options = this.options,
             category, action, label;
 
         if (category = elm[STRING_getAttribute](options.attrEvent) && (action = elm[STRING_getAttribute](options.attrAction))) {
             label = elm[STRING_getAttribute](options.attrLabel);
-            // when getFn was truthy then return closure
-            return getFn ? function() {
-                gasTrackEvent(category, action, label);
-            } : gasTrackEvent(category, action, label);
+            return gasTrackEvent(category, action, label);
         }
         return false;
     }
@@ -254,7 +256,7 @@
         (path = elm[STRING_getAttribute](options.attrPageview)) && gasTrackPageview(path);
 
         // event ( data-event & data-action are required. )
-        !elm[STRING_onclick] && (fn = gasRaiseTrackEvent.call(this, elm)) && fn();
+        !elm.__gas_prior && this.raiseTrack(elm);
     }
 
     /**
