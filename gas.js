@@ -86,7 +86,9 @@
     doc[STRING_getElementsByClassName] || (doc[STRING_getElementsByClassName] = function(clazz) {
         var elms = this.getElementsByTagName('*'),
             evClass = ' ' + clazz + ' ',
-            i = 0, rv = [], elm;
+            i = 0,
+            rv = [],
+            elm;
 
         while (elm = elms[i++]) {
             if (elm[STRING_nodeType] === 1 && (' ' + elm.className + ' ')[STRING_indexOf](evClass) !== -1) {
@@ -112,7 +114,7 @@
     // =================================================================================================================
 
     /**
-     * object passive merge
+     * object active merge
      *
      * @param {Object} a
      * @param {Object} b
@@ -122,7 +124,7 @@
         var k;
         for (k in b) {
             if (b.hasOwnProperty(k)) {
-                k in a || (a[k] = b[k]);
+                (a[k] = b[k]);
             }
         }
         return a;
@@ -149,7 +151,7 @@
         _gasSetArrayIntoQueue(options.preQueues);
 
         // track current pageview
-        options.trackCurrentPv && gasTrackPageview();
+        options.trackCurrentPv && that.trackPageview();
 
         // start observe anchor
         _gasAddEvent(doc, 'click', function(event) {
@@ -220,12 +222,13 @@
      * @return {Function|Boolean}
      */
     function gasRaiseTrackEvent(elm) {
-        var options = this.options,
+        var that    = this,
+            options = that.options,
             category, action, label;
 
-        if (category = elm[STRING_getAttribute](options.attrEvent) && (action = elm[STRING_getAttribute](options.attrAction))) {
+        if ((category = elm[STRING_getAttribute](options.attrEvent)) && (action = elm[STRING_getAttribute](options.attrAction))) {
             label = elm[STRING_getAttribute](options.attrLabel);
-            return gasTrackEvent(category, action, label);
+            return that.trackEvent(category, action, label);
         }
         return false;
     }
@@ -236,9 +239,10 @@
      * @param {Object} event
      */
     function _gasObserveElementClick(event) {
-        var elm     = event.target || event.srcElement,
-            options = this.options,
-            href, path, fn;
+        var that    = this,
+            elm     = event.target || event.srcElement,
+            options = that.options,
+            href, path;
 
         // text node? then elm is parentNode
         elm[STRING_nodeType] === 3 && (elm = elm[STRING_parentNode]);
@@ -248,15 +252,15 @@
             href = elm.href;
             if (href && elm[STRING_hostname] !== loc[STRING_hostname]) {
                 // category = gas:Outbound, action = href(full), label = href(hostname only)
-                gasTrackEvent('gas:Outbound', href, href.match(/\/\/([^\/]+)/)[1]);
+                that.trackEvent('gas:Outbound', href, href.match(/\/\/([^\/]+)/)[1]);
             }
         }
 
         // fake pageview
-        (path = elm[STRING_getAttribute](options.attrPageview)) && gasTrackPageview(path);
+        (path = elm[STRING_getAttribute](options.attrPageview)) && that.trackPageview(path);
 
         // event ( data-event & data-action are required. )
-        !elm.__gas_prior && this.raiseTrack(elm);
+        !elm.__gas_prior && that.raiseTrack(elm);
     }
 
     /**
