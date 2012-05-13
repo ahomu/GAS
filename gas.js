@@ -24,15 +24,12 @@
         STRING_push          = 'push',
         STRING_prototype     = 'prototype',
         STRING_getAttribute  = 'getAttribute',
-        STRING_parentNode    = 'parentNode',
-        STRING_indexOf       = 'indexOf',
-        STRING_nodeType      = 'nodeType',
-        STRING_hostname      = 'hostname',
-        STRING_getElementsByClassName = 'getElementsByClassName',
-        STRING_addEventListener       = 'addEventListener',
+        STRING_addEventListener = 'addEventListener',
 
-        FLAG_ADL = STRING_addEventListener in doc,
-        FLG_PRIOR_INITED = '__gas_prior',
+        FLAG_ADL             = STRING_addEventListener in doc,
+        // @ie-
+        FLAG_PRIOR_INITED    = '__gas_prior',
+        // -@ie
 
         // default settings
         DEFAULTS  = {
@@ -46,8 +43,6 @@
             attrAction      : 'data-action',
             attrLabel       : 'data-label',
 
-            classPrior      : 'gas_prior',
-
             preQueues       : [
                 /*
                 ['_addOrganic', 'excite', 'search'],
@@ -57,10 +52,18 @@
             ]
         };
 
+    // @ie-
+    if (!('console' in win)) {
+        win.console = {log: function(a,b,c,d,e,f) {
+            alert([a,b,c,d,e,f].join(' '));
+        }};
+    }
+    // -ie@
+
     /**
      * Opt-Out flag
      */
-    if (doc.cookie[STRING_indexOf]('__gas=ioo') !== -1) {
+    if (doc.cookie.indexOf('__gas=ioo') !== -1) {
         win._gaUserPrefs = {
             ioo: function() {
                 return 1;
@@ -79,26 +82,8 @@
         TRACK.src   = ('https:' === loc.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js',
         TRACK.onload= function() { QUEUE = win._gaq; },
         tg          = doc.getElementsByTagName(tg)[0],
-        tg[STRING_parentNode].insertBefore(TRACK, tg)
+        tg.parentNode.insertBefore(TRACK, tg)
     );
-
-    /**
-     * Adaptive getElementsByClassName
-     */
-    doc[STRING_getElementsByClassName] || (doc[STRING_getElementsByClassName] = function(clazz) {
-        var elms = this.getElementsByTagName('*'),
-            evClass = ' ' + clazz + ' ',
-            i = 0,
-            rv = [],
-            elm;
-
-        while (elm = elms[i++]) {
-            if (elm[STRING_nodeType] === 1 && (' ' + elm.className + ' ')[STRING_indexOf](evClass) !== -1) {
-                rv[STRING_push](elm);
-            }
-        }
-        return rv;
-    });
 
     /**
      * gas
@@ -173,24 +158,30 @@
     }
 
     /**
-     * tracking event priority over
+     * tracking event priority over (IE678 only)
      */
-    function gasInitPriorityOver() {
+    // @ie-
+    function gasInitPriorityOver(clazz) {
+        if (FLAG_ADL) {
+            return;
+        }
+        // @todo issue: use querySelectorAll for IE8
         var that = this,
-            elms = doc[STRING_getElementsByClassName](that.options.classPrior),
-            i = 0, elm;
+            elms = doc.getElementsByTagName('*'),
+            evClass = ' ' + clazz + ' ',
+            i = 0,
+            elm;
 
-        // set track event
         while (elm = elms[i++]) {
-            if (elm[FLG_PRIOR_INITED]) {
-                return;
+            if (!elm[FLAG_PRIOR_INITED] && elm.nodeType === 1 && (' ' + elm.className + ' ').indexOf(evClass) !== -1) {
+                elm[FLAG_PRIOR_INITED] = true;
+                _addEvent(elm, 'click', function(event) {
+                    that.detectTrackEvent(event.target || event.srcElement);
+                });
             }
-            elm[FLG_PRIOR_INITED] = true;
-            _addEvent(elm, 'click', function(event) {
-                that.detectTrackEvent(event.target || event.srcElement);
-            });
         }
     }
+    // -ie@
 
     /**
      * when element has an event tracking info, then return closure or tracking execute.
@@ -219,12 +210,12 @@
             href, path;
 
         // text node? then elm is parentNode
-        elm[STRING_nodeType] === 3 && (elm = elm[STRING_parentNode]);
+        elm.nodeType === 3 && (elm = elm.parentNode);
 
         // outbound
         if (options.trackOutbound && elm.tagName === 'A') {
             href = elm.href;
-            if (href && elm[STRING_hostname] !== loc[STRING_hostname]) {
+            if (href && elm.hostname !== loc.hostname) {
                 // category = gas:Outbound, action = href(full), label = href(hostname only)
                 this.trackEvent('gas:Outbound', href, href.match(/\/\/([^\/]+)/)[1]);
             }
@@ -234,7 +225,10 @@
         (path = elm[STRING_getAttribute](options.attrPageview)) && this.trackPageview(path);
 
         // event ( data-event & data-action are required. )
-        !elm[FLG_PRIOR_INITED] && this.detectTrackEvent(elm);
+        // @ie-
+        !elm[FLAG_PRIOR_INITED] &&
+        // -@ie
+        this.detectTrackEvent(elm);
     }
 
     /**
@@ -255,9 +249,8 @@
      * @param {Function} evaluator
      */
     function _addEvent(elm, type, evaluator) {
-        elm[FLAG_ADL ? STRING_addEventListener : 'attachEvent']((FLAG_ADL ? '' : 'on')+type, evaluator, false);
+        elm[FLAG_ADL ? STRING_addEventListener : 'attachEvent']((FLAG_ADL ? '' : 'on')+type, evaluator, true);
     }
-
 
     /**
      * object active merge
