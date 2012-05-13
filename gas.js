@@ -34,6 +34,8 @@
         FLAG_ADL = STRING_addEventListener in doc,
 
         DEFAULTS  = {
+            debug              : false,
+
             trackOutbound      : true,
             trackCurrentPv     : true,
 
@@ -177,6 +179,7 @@
      * @param {String} [path]
      */
     function gasTrackPageview(path) {
+        !!this.options.debug && console.log('gas:Pv', path || location.pathname);
         QUEUE[STRING_push]([STRING_trackPageview, path]);
     }
 
@@ -192,6 +195,7 @@
      * @param {String} [opt_nointeraction] "default value is false. if set true when event is not effect to bounce rate."
      */
     function gasTrackEvent(category, action, opt_label, opt_value, opt_nointeraction) {
+        !!this.options.debug && console.log('gas:Event', category, action, opt_label, opt_value, opt_nointeraction);
         QUEUE[STRING_push]([STRING_trackEvent, category, action, opt_label, opt_value, opt_nointeraction]);
     }
 
