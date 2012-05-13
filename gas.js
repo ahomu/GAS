@@ -6,7 +6,7 @@
  * Licensed under the MIT license:
  *  http://www.opensource.org/licenses/mit-license.php
  *
- * @version 0.1
+ * @version 0.2
  */
 (function(win, doc, loc) {
 
