@@ -19,13 +19,18 @@
         TRACK = win._gat,
         tg    = 'script',
 
+        STRING_trackPageview = '_trackPageview',
+        STRING_trackEvent    = '_trackEvent',
         STRING_push          = 'push',
         STRING_prototype     = 'prototype',
         STRING_getAttribute  = 'getAttribute',
         STRING_parentNode    = 'parentNode',
-        STRING_addEventListener = 'addEventListener',
-        STRING_trackPageview = '_trackPageview',
-        STRING_trackEvent    = '_trackEvent',
+        STRING_onclick       = 'onclick',
+        STRING_indexOf       = 'indexOf',
+        STRING_nodeType      = 'nodeType',
+        STRING_hostname      = 'hostname',
+        STRING_getElementsByClassName = 'getElementsByClassName',
+        STRING_addEventListener       = 'addEventListener',
 
         FLAG_ADL = STRING_addEventListener in doc,
 
@@ -39,6 +44,8 @@
             attrAction       : 'data-action',
             attrLabel        : 'data-label',
 
+            classPrior       : 'gas_prior',
+
             preQueues             : [
                 /*
                 ['_addOrganic', 'excite', 'search'],
@@ -48,7 +55,20 @@
             ]
         };
 
-    // load tracker
+    /**
+     * Opt-Out flag
+     */
+    if (doc.cookie[STRING_indexOf]('__gas=ioo') !== -1) {
+        win._gaUserPrefs = {
+            ioo: function() {
+                return 1;
+            }
+        };
+    }
+
+    /**
+     * Load Tracker
+     */
     TRACK || (
         TRACK       = doc.createElement(tg),
         TRACK.type  = 'text/javascript',
@@ -62,15 +82,20 @@
     );
 
     /**
-     * Opt-Out flag
+     * Adaptive getElementsByClassName
      */
-    if (doc.cookie.indexOf('__gas=ioo') !== -1) {
-        win._gaUserPrefs = {
-            ioo: function() {
-                return 1;
+    doc[STRING_getElementsByClassName] || (doc[STRING_getElementsByClassName] = function(clazz) {
+        var elms = this.getElementsByTagName('*'),
+            evClass = ' ' + clazz + ' ',
+            i = 0, rv = [], elm;
+
+        while (elm = elms[i++]) {
+            if (elm[STRING_nodeType] === 1 && (' ' + elm.className + ' ')[STRING_indexOf](evClass) !== -1) {
+                rv[STRING_push](elm);
             }
-        };
-    }
+        }
+        return rv;
+    });
 
     /**
      * gas
@@ -80,7 +105,9 @@
         profile  : null,
         options  : null,
         trackPageview : gasTrackPageview,
-        trackEvent    : gasTrackEvent
+        trackEvent    : gasTrackEvent,
+        priorityOver  : gasInitPriorityOver,
+        raiseTrack    : gasRaiseTrackEvent
     });
 
     // =================================================================================================================
@@ -168,6 +195,40 @@
     }
 
     /**
+     * tracking event priority over
+     */
+    function gasInitPriorityOver() {
+        var elms = doc[STRING_getElementsByClassName](this.options.classPrior),
+            i = 0, elm, fn;
+
+        // set track event closure into onclick attribute
+        while (elm = elms[i++]) {
+            (fn = gasRaiseTrackEvent.call(this, elm, true)) && (elm[STRING_onclick] = fn);
+        }
+    }
+
+    /**
+     * when element has an event tracking info, then return closure or tracking execute.
+     *
+     * @param {Element} elm
+     * @param {Boolean} getFn
+     * @return {Function|Boolean}
+     */
+    function gasRaiseTrackEvent(elm, getFn) {
+        var options = this.options,
+            category, action, label;
+
+        if (category = elm[STRING_getAttribute](options.attrEvent) && (action = elm[STRING_getAttribute](options.attrAction))) {
+            label = elm[STRING_getAttribute](options.attrLabel);
+            // when getFn was truthy then return closure
+            return getFn ? function() {
+                gasTrackEvent(category, action, label);
+            } : gasTrackEvent(category, action, label);
+        }
+        return false;
+    }
+
+    /**
      * observe element click
      *
      * @param {Object} event
@@ -175,31 +236,25 @@
     function _gasObserveElementClick(event) {
         var elm     = event.target || event.srcElement,
             options = this.options,
-            href, path, category, action, label;
+            href, path, fn;
 
-        if (elm.nodeType === 3) {
-            elm = elm[STRING_parentNode];
-        }
+        // text node? then elm is parentNode
+        elm[STRING_nodeType] === 3 && (elm = elm[STRING_parentNode]);
 
         // outbound
         if (options.trackOutbound && elm.tagName === 'A') {
             href = elm.href;
-            if (href && elm.hostname !== loc.hostname) {
+            if (href && elm[STRING_hostname] !== loc[STRING_hostname]) {
                 // category = gas:Outbound, action = href(full), label = href(hostname only)
                 gasTrackEvent('gas:Outbound', href, href.match(/\/\/([^\/]+)/)[1]);
             }
         }
 
         // fake pageview
-        if (path = elm[STRING_getAttribute](options.attrPageview)) {
-            gasTrackPageview(path);
-        }
+        (path = elm[STRING_getAttribute](options.attrPageview)) && gasTrackPageview(path);
 
         // event ( data-event & data-action are required. )
-        if (category = elm[STRING_getAttribute](options.attrEvent) && (action = elm[STRING_getAttribute](options.attrAction))) {
-            label = elm[STRING_getAttribute](options.attrLabel);
-            gasTrackEvent(category, action, label);
-        }
+        !elm[STRING_onclick] && (fn = gasRaiseTrackEvent.call(this, elm)) && fn();
     }
 
     /**
