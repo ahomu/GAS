@@ -29,7 +29,7 @@
         FLAG_ADL             = STRING_addEventListener in doc,
         // @ie-
         FLAG_PRIOR_INITED    = '__gas_prior',
-        // -@ie
+        // -ie@
 
         // default settings
         DEFAULTS  = {
@@ -94,7 +94,9 @@
         options  : null,
         trackPageview    : gasTrackPageview,
         trackEvent       : gasTrackEvent,
+        // @ie-
         priorityOver     : gasInitPriorityOver,
+        // -ie@
         detectTrackEvent : gasDetectTrackEvent
     });
 
@@ -227,7 +229,7 @@
         // event ( data-event & data-action are required. )
         // @ie-
         !elm[FLAG_PRIOR_INITED] &&
-        // -@ie
+        // -ie@
         this.detectTrackEvent(elm);
     }
 
