@@ -15,8 +15,7 @@
     /**
      * variables
      */
-    var QUEUE = win._gaq = [],
-        TRACK = win._gat,
+    var TRACK = win._gat,
         tg    = 'script',
 
         STRING_trackPageview = '_trackPageview',
@@ -74,13 +73,13 @@
     /**
      * Load Tracker
      */
+    win._gaq = win._gaq || [];
     TRACK || (
         TRACK       = doc.createElement(tg),
         TRACK.type  = 'text/javascript',
         TRACK.async = true,
         // @see http://mathiasbynens.be/notes/async-analytics-snippet#comment-29
         TRACK.src   = ('https:' === loc.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js',
-        TRACK.onload= function() { QUEUE = win._gaq; },
         tg          = doc.getElementsByTagName(tg)[0],
         tg.parentNode.insertBefore(TRACK, tg)
     );
@@ -88,7 +87,7 @@
     /**
      * gas
      */
-    win.GAS  = GAShorthands;
+    win.GAS = GAShorthands;
     _shake(GAShorthands[STRING_prototype], {
         profile  : null,
         options  : null,
@@ -117,7 +116,7 @@
         that.profile = profile;
 
         // set account
-        QUEUE[STRING_push](['_setAccount', profile]);
+        win._gaq[STRING_push](['_setAccount', profile]);
 
         // prepush
         _addSetArrayIntoQueue(options.preQueues);
@@ -140,7 +139,7 @@
      */
     function gasTrackPageview(path) {
         !!this.options.debug && console.log('gas:Pv', path || location.pathname);
-        QUEUE[STRING_push]([STRING_trackPageview, path]);
+        win._gaq[STRING_push]([STRING_trackPageview, path]);
     }
 
     /**
@@ -156,7 +155,7 @@
      */
     function gasTrackEvent(category, action, opt_label, opt_value, opt_nointeraction) {
         !!this.options.debug && console.log('gas:Event', category, action, opt_label, opt_value, opt_nointeraction);
-        QUEUE[STRING_push]([STRING_trackEvent, category, action, opt_label, opt_value, opt_nointeraction]);
+        win._gaq[STRING_push]([STRING_trackEvent, category, action, opt_label, opt_value, opt_nointeraction]);
     }
 
     /**
@@ -239,8 +238,9 @@
      * @param {Array} array
      */
     function _addSetArrayIntoQueue(array) {
-        QUEUE.length === void 0 ? QUEUE[STRING_push].apply(QUEUE, array)
-                                : Array[STRING_prototype][STRING_push].apply(QUEUE, array);
+        var queue = win._gaq;
+        queue.length === void 0 ? queue[STRING_push].apply(queue, array)
+                                : Array[STRING_prototype][STRING_push].apply(queue, array);
     }
 
     /**
