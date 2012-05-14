@@ -6,7 +6,7 @@
  * Licensed under the MIT license:
  *  http://www.opensource.org/licenses/mit-license.php
  *
- * @version 0.1
+ * @version 0.2
  */
 (function(win, doc, loc) {
 
@@ -15,31 +15,34 @@
     /**
      * variables
      */
-    var QUEUE = win._gaq = [],
-        TRACK = win._gat,
+    var TRACK = win._gat,
         tg    = 'script',
 
+        STRING_trackPageview = '_trackPageview',
+        STRING_trackEvent    = '_trackEvent',
         STRING_push          = 'push',
         STRING_prototype     = 'prototype',
         STRING_getAttribute  = 'getAttribute',
-        STRING_parentNode    = 'parentNode',
         STRING_addEventListener = 'addEventListener',
-        STRING_trackPageview = '_trackPageview',
-        STRING_trackEvent    = '_trackEvent',
 
-        FLAG_ADL = STRING_addEventListener in doc,
+        FLAG_ADL             = STRING_addEventListener in doc,
+        // @ie-
+        FLAG_PRIOR_INITED    = '__gas_prior',
+        // -ie@
 
+        // default settings
         DEFAULTS  = {
-            trackOutbound      : true,
-            trackCurrentPv     : true,
+            debug           : false,
 
-            // @todo issue: requires namespace? e.g, data-gas-xxx
-            attrPageview     : 'data-pv',
-            attrEvent        : 'data-event',
-            attrAction       : 'data-action',
-            attrLabel        : 'data-label',
+            trackOutbound   : true,
+            trackCurrentPv  : true,
 
-            preQueues             : [
+            attrPageview    : 'data-pv',
+            attrEvent       : 'data-event',
+            attrAction      : 'data-action',
+            attrLabel       : 'data-label',
+
+            preQueues       : [
                 /*
                 ['_addOrganic', 'excite', 'search'],
                 ['_addOrganic', 'hatena', 'word'],
@@ -48,18 +51,13 @@
             ]
         };
 
-    // load tracker
-    TRACK || (
-        TRACK       = doc.createElement(tg),
-        TRACK.type  = 'text/javascript',
-        TRACK.async = true,
-        // @see http://mathiasbynens.be/notes/async-analytics-snippet#comment-29
-        TRACK.src   = ('https:' === loc.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js',
-        // @todo issue: each time referencing to win._gaq when stop to saving QUEUE variable?
-        TRACK.onload= function() { QUEUE = win._gaq; },
-        tg          = doc.getElementsByTagName(tg)[0],
-        tg[STRING_parentNode].insertBefore(TRACK, tg)
-    );
+    // @ie-
+    if (!('console' in win)) {
+        win.console = {log: function(a,b,c,d,e,f) {
+            alert([a,b,c,d,e,f].join(' '));
+        }};
+    }
+    // -ie@
 
     /**
      * Opt-Out flag
@@ -73,34 +71,35 @@
     }
 
     /**
+     * Load Tracker
+     */
+    win._gaq = win._gaq || [];
+    TRACK || (
+        TRACK       = doc.createElement(tg),
+        TRACK.type  = 'text/javascript',
+        TRACK.async = true,
+        // @see http://mathiasbynens.be/notes/async-analytics-snippet#comment-29
+        TRACK.src   = ('https:' === loc.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js',
+        tg          = doc.getElementsByTagName(tg)[0],
+        tg.parentNode.insertBefore(TRACK, tg)
+    );
+
+    /**
      * gas
      */
-    win.GAS  = GAShorthands;
+    win.GAS = GAShorthands;
     _shake(GAShorthands[STRING_prototype], {
         profile  : null,
         options  : null,
-        trackPageview : gasTrackPageview,
-        trackEvent    : gasTrackEvent
+        trackPageview    : gasTrackPageview,
+        trackEvent       : gasTrackEvent,
+        // @ie-
+        priorityOver     : gasInitPriorityOver,
+        // -ie@
+        detectTrackEvent : gasDetectTrackEvent
     });
 
     // =================================================================================================================
-
-    /**
-     * object passive merge
-     *
-     * @param {Object} a
-     * @param {Object} b
-     * @return {Object}
-     */
-    function _shake(a, b) {
-        var k;
-        for (k in b) {
-            if (b.hasOwnProperty(k)) {
-                k in a || (a[k] = b[k]);
-            }
-        }
-        return a;
-    }
 
     /**
      * initialize
@@ -117,28 +116,18 @@
         that.profile = profile;
 
         // set account
-        QUEUE[STRING_push](['_setAccount', profile]);
+        win._gaq[STRING_push](['_setAccount', profile]);
 
         // prepush
-        _gasSetArrayIntoQueue(options.preQueues);
+        _addSetArrayIntoQueue(options.preQueues);
 
         // track current pageview
-        options.trackCurrentPv && gasTrackPageview();
+        options.trackCurrentPv && that.trackPageview();
 
         // start observe anchor
-        _gasAddEvent(doc, 'click', function(event) {
-            _gasObserveElementClick.call(that, event);
+        _addEvent(doc, 'click', function(event) {
+            _observeElementClick.call(that, event);
         });
-    }
-
-    /**
-     * set many queues from array
-     *
-     * @param {Array} array
-     */
-    function _gasSetArrayIntoQueue(array) {
-        QUEUE.length === void 0 ? QUEUE[STRING_push].apply(QUEUE, array)
-                                : Array[STRING_prototype][STRING_push].apply(QUEUE, array);
     }
 
     /**
@@ -149,7 +138,8 @@
      * @param {String} [path]
      */
     function gasTrackPageview(path) {
-        QUEUE[STRING_push]([STRING_trackPageview, path]);
+        !!this.options.debug && console.log('gas:Pv', path || location.pathname);
+        win._gaq[STRING_push]([STRING_trackPageview, path]);
     }
 
     /**
@@ -164,7 +154,50 @@
      * @param {String} [opt_nointeraction] "default value is false. if set true when event is not effect to bounce rate."
      */
     function gasTrackEvent(category, action, opt_label, opt_value, opt_nointeraction) {
-        QUEUE[STRING_push]([STRING_trackEvent, category, action, opt_label, opt_value, opt_nointeraction]);
+        !!this.options.debug && console.log('gas:Event', category, action, opt_label, opt_value, opt_nointeraction);
+        win._gaq[STRING_push]([STRING_trackEvent, category, action, opt_label, opt_value, opt_nointeraction]);
+    }
+
+    /**
+     * tracking event priority over (IE678 only)
+     */
+    // @ie-
+    function gasInitPriorityOver(clazz) {
+        if (FLAG_ADL) {
+            return;
+        }
+        // @todo issue: use querySelectorAll for IE8
+        var that = this,
+            elms = doc.getElementsByTagName('*'),
+            evClass = ' ' + clazz + ' ',
+            i = 0,
+            elm;
+
+        while (elm = elms[i++]) {
+            if (!elm[FLAG_PRIOR_INITED] && elm.nodeType === 1 && (' ' + elm.className + ' ').indexOf(evClass) !== -1) {
+                elm[FLAG_PRIOR_INITED] = true;
+                _addEvent(elm, 'click', function(event) {
+                    that.detectTrackEvent(event.target || event.srcElement);
+                });
+            }
+        }
+    }
+    // -ie@
+
+    /**
+     * when element has an event tracking info, then return closure or tracking execute.
+     *
+     * @param {Element} elm
+     */
+    function gasDetectTrackEvent(elm) {
+        var options  = this.options,
+            category = elm[STRING_getAttribute](options.attrEvent),
+            action   = elm[STRING_getAttribute](options.attrAction),
+            label    = elm[STRING_getAttribute](options.attrLabel);
+
+        if (category && action) {
+            this.trackEvent(category, action, label);
+        }
     }
 
     /**
@@ -172,34 +205,42 @@
      *
      * @param {Object} event
      */
-    function _gasObserveElementClick(event) {
+    function _observeElementClick(event) {
         var elm     = event.target || event.srcElement,
             options = this.options,
-            href, path, category, action, label;
+            href, path;
 
-        if (elm.nodeType === 3) {
-            elm = elm[STRING_parentNode];
-        }
+        // text node? then elm is parentNode
+        elm.nodeType === 3 && (elm = elm.parentNode);
 
         // outbound
         if (options.trackOutbound && elm.tagName === 'A') {
             href = elm.href;
             if (href && elm.hostname !== loc.hostname) {
                 // category = gas:Outbound, action = href(full), label = href(hostname only)
-                gasTrackEvent('gas:Outbound', href, href.match(/\/\/([^\/]+)/)[1]);
+                this.trackEvent('gas:Outbound', href, href.match(/\/\/([^\/]+)/)[1]);
             }
         }
 
         // fake pageview
-        if (path = elm[STRING_getAttribute](options.attrPageview)) {
-            gasTrackPageview(path);
-        }
+        (path = elm[STRING_getAttribute](options.attrPageview)) && this.trackPageview(path);
 
         // event ( data-event & data-action are required. )
-        if (category = elm[STRING_getAttribute](options.attrEvent) && (action = elm[STRING_getAttribute](options.attrAction))) {
-            label = elm[STRING_getAttribute](options.attrLabel);
-            gasTrackEvent(category, action, label);
-        }
+        // @ie-
+        !elm[FLAG_PRIOR_INITED] &&
+        // -ie@
+        this.detectTrackEvent(elm);
+    }
+
+    /**
+     * set many queues from array
+     *
+     * @param {Array} array
+     */
+    function _addSetArrayIntoQueue(array) {
+        var queue = win._gaq;
+        queue.length === void 0 ? queue[STRING_push].apply(queue, array)
+                                : Array[STRING_prototype][STRING_push].apply(queue, array);
     }
 
     /**
@@ -209,8 +250,25 @@
      * @param {String}   type
      * @param {Function} evaluator
      */
-    function _gasAddEvent(elm, type, evaluator) {
-        elm[FLAG_ADL ? STRING_addEventListener : 'attachEvent']((FLAG_ADL ? '' : 'on')+type, evaluator, false);
+    function _addEvent(elm, type, evaluator) {
+        elm[FLAG_ADL ? STRING_addEventListener : 'attachEvent']((FLAG_ADL ? '' : 'on')+type, evaluator, true);
+    }
+
+    /**
+     * object active merge
+     *
+     * @param {Object} a
+     * @param {Object} b
+     * @return {Object}
+     */
+    function _shake(a, b) {
+        var k;
+        for (k in b) {
+            if (b.hasOwnProperty(k)) {
+                (a[k] = b[k]);
+            }
+        }
+        return a;
     }
 
 })(window, document, location);
