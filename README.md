@@ -28,10 +28,18 @@ hmm...
 
 ###Event tracking
 
+    // original
+    <button onclick="_gaq.push(['_trackEvent', 'category', 'done', 'piyopiyo'])">Done</button>
+
+    // gas.js
     <button data-event="category" data-action="done" data-label="piyopiyo">Done</button>
 
 ###Fake pageview tracking
 
+    // original
+    <a href="#hogehoge" onclick="_gaq.push(['_trackPageview', '/fake_path.html'])">Fake page</a>
+
+    // gas.js
     <a href="#hogehoge" data-pv="/fake_path.html">Fake page</a>
 
 ###Outbound link
@@ -64,7 +72,7 @@ For example, bind a click event using jQuery.
         return false;
     });
 
-Then event does not follow the 'document' and cannot track event. on Internet Explorer 6~8.
+Then click event does not follow the 'document' and cannot event tracking. on Internet Explorer 6~8.
 
 Solve this problem embed the following script, and class 'gas_prior' add to anchor element.
 
@@ -80,6 +88,8 @@ Solve this problem embed the following script, and class 'gas_prior' add to anch
     });
     </script>
     <a href="#" id="clickable" class="gas_prior" data-event="foo" data-action="bar">Action</a>
+
+gas.priorityOver method re-binding event to each element with class 'gas_prior'.
 
 ##ToDo
 
