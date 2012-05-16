@@ -15,8 +15,7 @@
     /**
      * variables
      */
-    var TRACK = win._gat,
-        tg    = 'script',
+    var tagName = 'script', gatSrc, script,
 
         STRING_trackPageview = '_trackPageview',
         STRING_trackEvent    = '_trackEvent',
@@ -74,14 +73,14 @@
      * Load Tracker
      */
     win._gaq = win._gaq || [];
-    TRACK || (
-        TRACK       = doc.createElement(tg),
-        TRACK.type  = 'text/javascript',
-        TRACK.async = true,
+    win._gat || (
+        gatSrc       = doc.createElement(tagName),
+        gatSrc.type  = 'text/javascript',
+        gatSrc.async = true,
         // @see http://mathiasbynens.be/notes/async-analytics-snippet#comment-29
-        TRACK.src   = ('https:' === loc.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js',
-        tg          = doc.getElementsByTagName(tg)[0],
-        tg.parentNode.insertBefore(TRACK, tg)
+        gatSrc.src   = ('https:' === loc.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js',
+        script       = doc.getElementsByTagName(tagName)[0],
+        script.parentNode.insertBefore(gatSrc, script)
     );
 
     /**
