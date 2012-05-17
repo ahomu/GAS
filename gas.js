@@ -6,7 +6,7 @@
  * Licensed under the MIT license:
  *  http://www.opensource.org/licenses/mit-license.php
  *
- * @version 0.2
+ * @version 0.3
  */
 (function(win, doc, loc) {
 
@@ -31,7 +31,10 @@
 
         // default settings
         DEFAULTS  = {
+            // default output to console. when ie678 then alert.
             debug           : false,
+            // if enable popup-block then press shift|meta|ctrl with clicking for opening new window is disalbed.
+            delayOutbound   : true,
 
             trackOutbound   : true,
             trackCurrentPv  : true,
@@ -207,19 +210,10 @@
     function _observeElementClick(event) {
         var elm     = event.target || event.srcElement,
             options = this.options,
-            href, path;
+            href, path, open, w;
 
         // text node? then elm is parentNode
         elm.nodeType === 3 && (elm = elm.parentNode);
-
-        // outbound
-        if (options.trackOutbound && elm.tagName === 'A') {
-            href = elm.href;
-            if (href && elm.hostname !== loc.hostname) {
-                // category = gas:Outbound, action = href(full), label = href(hostname only)
-                this.trackEvent('gas:Outbound', href, href.match(/\/\/([^\/]+)/)[1]);
-            }
-        }
 
         // fake pageview
         (path = elm[STRING_getAttribute](options.attrPageview)) && this.trackPageview(path);
@@ -229,6 +223,33 @@
         !elm[FLAG_PRIOR_INITED] &&
         // -ie@
         this.detectTrackEvent(elm);
+
+        // outbound
+        if (options.trackOutbound && elm.tagName === 'A') {
+            href = elm.href;
+            if (href && elm.hostname !== loc.hostname) {
+                // category = gas:Outbound, action = href(full), label = href(hostname only)
+                this.trackEvent('gas:Outbound', href, href.match(/\/\/([^\/]+)/)[1]);
+
+                // more accuracy
+                if (options.delayOutbound) {
+                    // prevent anchor link
+                    event.preventDefault ? event.preventDefault()
+                                         : (event.returnValue = false);
+
+                    // @todo issue: when click with ctrl-key on ie7-8, then cannot captuaring to click-event.
+                    // want to new window|tab?
+                    open = (event.ctrlKey || event.shiftKey || event.metaKey || elm.target === '_blank');
+                    setTimeout(function() {
+                        if (open && (w = win.open())) {
+                            w.location.href = href;
+                        } else {
+                            loc.href = href;
+                        }
+                    }, 100);
+                }
+            }
+        }
     }
 
     /**
