@@ -23,8 +23,10 @@
         STRING_prototype     = 'prototype',
         STRING_getAttribute  = 'getAttribute',
         STRING_addEventListener = 'addEventListener',
+        STRING_querySelectorAll = 'querySelectorAll',
 
         FLAG_ADL             = STRING_addEventListener in doc,
+        FLAG_QSA             = STRING_querySelectorAll in doc,
         // @ie-
         FLAG_PRIOR_INITED    = '__gas_prior',
         // -ie@
@@ -164,19 +166,19 @@
      * tracking event priority over (IE678 only)
      */
     // @ie-
-    function gasInitPriorityOver(clazz) {
+    function gasInitPriorityOver(clazz, tag) {
         if (FLAG_ADL) {
             return;
         }
-        // @todo issue: use querySelectorAll for IE8
+
         var that = this,
-            elms = doc.getElementsByTagName('*'),
+            elms = FLAG_QSA ? doc[STRING_querySelectorAll]('.'+clazz) : doc.getElementsByTagName(tag || '*'),
             evClass = ' ' + clazz + ' ',
             i = 0,
             elm;
 
         while (elm = elms[i++]) {
-            if (!elm[FLAG_PRIOR_INITED] && elm.nodeType === 1 && (' ' + elm.className + ' ').indexOf(evClass) !== -1) {
+            if (!elm[FLAG_PRIOR_INITED] && (FLAG_QSA || (' ' + elm.className + ' ').indexOf(evClass) !== -1)) {
                 elm[FLAG_PRIOR_INITED] = true;
                 _addEvent(elm, 'click', function(event) {
                     that.detectTrackEvent(event.target || event.srcElement);
@@ -237,7 +239,7 @@
                     event.preventDefault ? event.preventDefault()
                                          : (event.returnValue = false);
 
-                    // @todo issue: when click with ctrl-key on ie7-8, then cannot captuaring to click-event.
+                    // @todo issue: click with ctrl-key on ie7-8, when cannot captuaring to click-event.
                     // want to new window|tab?
                     open = (event.ctrlKey || event.shiftKey || event.metaKey || elm.target === '_blank');
                     setTimeout(function() {
