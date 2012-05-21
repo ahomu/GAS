@@ -72,7 +72,7 @@ For example, bind a click event using jQuery.
         return false;
     });
 
-Then click event does not follow the 'document' and cannot event tracking. on Internet Explorer 6~8.
+This 'click event' does not follow the 'document' and cannot event tracking. on Internet Explorer 6~8.
 
 Solve this problem embed the following script, and class 'gas_prior' add to anchor element.
 
@@ -96,7 +96,6 @@ gas.priorityOver method re-binding event to each element with class 'gas_prior'.
 <small>えいごあやしいすみませんすみません</small>
 
 +  popstate, hashchange時のトラッキングサポート
-+  イベントトラックのsyncサポート（asyncでリクエストが発生しないことがある）
 +  子要素clickへの反応（parentNodeを辿ってdata-xxxを探索する）
 
 ↓のようなdata属性の付与の仕方に対応したり
