@@ -36,7 +36,7 @@
             // default output to console. when ie678 then alert.
             debug           : false,
             // if enable popup-block then press shift|meta|ctrl with clicking for opening new window is disalbed.
-            delayOutbound   : true,
+            delayOutbound   : false,
 
             trackOutbound   : true,
             trackCurrentPv  : true,
